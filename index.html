@@ -10,7 +10,16 @@
 
   <style>
     :root{--bg:#0b1220;--card:#0f1724;--muted:#98a3b3;--accent:#ffd166}
-    html,body{height:100%;margin:0;font-family:'Scheherazade New', serif;background:linear-gradient(180deg,#071029,#0b1220);color:#fff}
+    html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Scheherazade New', serif;
+  background: linear-gradient(180deg,#071029,#0b1220);
+  background-color: #0b1220;
+  color: #fff;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
     .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
     .card{width:100%;max-width:760px;background:var(--card);border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
     h1{margin:0 0 8px 0;font-size:18px;text-align:center;color:var(--accent)}
