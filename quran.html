@@ -1,0 +1,97 @@
+<!doctype html>
+async function fetchRandomAyah(){
+setLoading(true);
+errorEl.style.display = 'none';
+try{
+const r1 = await fetch(`${API_BASE}/verses/random`);
+if(!r1.ok) throw new Error('random endpoint: ' + r1.status);
+const d1 = await r1.json();
+const verse_key = d1?.verse?.verse_key;
+if(!verse_key) throw new Error('No verse_key returned');
+
+
+const [surah, ayah] = verse_key.split(':');
+
+
+const r2 = await fetch(`${API_BASE}/quran/verses/uthmani?verse_key=${encodeURIComponent(verse_key)}`);
+if(!r2.ok) throw new Error('uthmani text: ' + r2.status);
+const d2 = await r2.json();
+const ayahText = d2?.verses?.[0]?.text_uthmani || '';
+
+
+const r3 = await fetch(`${API_BASE}/chapters/${surah}?language=ar`);
+if(!r3.ok) throw new Error('chapter: ' + r3.status);
+const d3 = await r3.json();
+const surahName = d3?.chapter?.name_arabic || d3?.chapter?.name || '';
+
+
+last = {ayahText, surahName, verse_key, surah: parseInt(surah,10), ayah: parseInt(ayah,10)};
+renderAyah();
+}catch(err){
+console.error(err);
+errorEl.textContent = 'حدث خطأ: ' + (err.message || err);
+errorEl.style.display = 'block';
+ayahEl.textContent = 'لا يمكن جلب الآية حالياً.';
+metaEl.style.visibility = 'hidden';
+}finally{
+setLoading(false);
+}
+}
+
+
+function renderAyah(){
+if(!last) return;
+ayahEl.textContent = last.ayahText || '';
+surahEl.textContent = '';
+verseEl.textContent = '';
+metaEl.style.visibility = 'hidden';
+}
+
+
+function reveal(){
+if(!last) return;
+surahEl.textContent = 'السورة: ' + last.surahName;
+verseEl.textContent = 'الآية: ' + toArabicIndic(last.ayah) + ' — (' + last.verse_key + ')';
+metaEl.style.visibility = 'visible';
+}
+
+
+function setLoading(isLoading){
+if(isLoading){
+nextBtn.disabled = true; revealBtn.disabled = true; copyBtn.disabled = true;
+nextBtn.textContent = 'جارٍ...';
+} else {
+nextBtn.disabled = false; revealBtn.disabled = false; copyBtn.disabled = false;
+nextBtn.textContent = 'آية ثانية';
+}
+}
+
+
+revealBtn.addEventListener('click', ()=>{
+reveal();
+});
+
+
+nextBtn.addEventListener('click', ()=>{
+fetchRandomAyah();
+});
+
+
+copyBtn.addEventListener('click', async ()=>{
+if(!last) return;
+const text = `${last.ayahText}\n — ${last.surahName} ${last.verse_key}`;
+try{
+await navigator.clipboard.writeText(text);
+copyBtn.textContent = 'تم النسخ!';
+setTimeout(()=>copyBtn.textContent='نسخ الآية',900);
+}catch(e){
+alert('فشل النسخ — حاول يدوياً');
+}
+});
+
+
+// initial fetch
+fetchRandomAyah();
+</script>
+</body>
+</html>
