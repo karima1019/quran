@@ -4,10 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>قرآن – آية عشوائية (Guess)</title>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
+
+  <!-- Arabic fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri&family=Tajawal:wght@400;500&family=Noto+Naskh+Arabic:wght@400;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
     :root{--bg:#0b1220;--card:#0f1724;--muted:#98a3b3;--accent:#ffd166}
-    html,body{height:100%;margin:0;font-family:Amiri, serif;background:linear-gradient(180deg,#071029,#0b1220);color:#fff}
+    html,body{height:100%;margin:0;font-family:'Scheherazade New', serif;background:linear-gradient(180deg,#071029,#0b1220);color:#fff}
     .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
     .card{width:100%;max-width:760px;background:var(--card);border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
     h1{margin:0 0 8px 0;font-size:18px;text-align:center;color:var(--accent)}
@@ -19,9 +22,26 @@
     button.primary{background:var(--accent);color:#081126;border:none}
     .small{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
     .error{color:#ff7b7b;text-align:center;margin-top:8px}
+
+    /* Font dropdown */
+    #fontPicker{
+      position:fixed;left:10px;top:10px;
+      background:#0f1724;border:1px solid #444;
+      padding:6px 10px;border-radius:8px;
+      color:#fff;font-size:14px;z-index:99;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Font selector -->
+  <select id="fontPicker">
+    <option value="Scheherazade New">Scheherazade</option>
+    <option value="Amiri">Amiri</option>
+    <option value="Noto Naskh Arabic">Noto Naskh</option>
+    <option value="Tajawal">Tajawal</option>
+  </select>
+
   <div class="wrap">
     <div class="card">
       <h1>آية عشوائية — جرّب التخمين</h1>
@@ -35,120 +55,110 @@
         <button id="nextBtn" class="primary">آية ثانية</button>
         <button id="copyBtn">نسخ الآية</button>
       </div>
-      <div class="small">المصدر: quran.com API (Arabic Uthmani). اضغط "كشف" لعرض السورة والآية، ثم "آية ثانية" للمواصلة.</div>
+      <div class="small">المصدر: quran.com API – النص العثماني.</div>
       <div id="error" class="error" style="display:none"></div>
     </div>
   </div>
 
   <script>
-    // === CONFIG ===
-    // If you do NOT use a proxy, leave PROXY = ''.
-    // If you use a worker that expects a ?url= param (the Cloudflare Worker example I gave),
-    // set PROXY to: 'https://yourproxy.workers.dev/?url='
-    // If your proxy expects the target as a path (like https://yourproxy.workers.dev/https://api...), set PROXY to 'https://yourproxy.workers.dev/'
-    const PROXY = ''; // <-- put your proxy here (or leave empty)
-    const API_ROOT = 'https://api.quran.com/api/v4';
+    const PROXY = "";  // No proxy needed
+    const API_ROOT = "https://api.quran.com/api/v4";
 
-    function buildUrl(target) {
-      if (!PROXY) return target;
-      // if PROXY already contains '?url=' assume it's ready to append encoded target
-      if (PROXY.includes('?url=')) return PROXY + encodeURIComponent(target);
-      // if PROXY ends with a slash or not, append encoded target as path
-      return PROXY.replace(/\/$/, '') + '/' + encodeURIComponent(target);
-    }
+    function buildUrl(u){ return PROXY ? PROXY + encodeURIComponent(u) : u; }
 
-    const ayahEl = document.getElementById('ayah');
-    const surahEl = document.getElementById('surah');
-    const verseEl = document.getElementById('verse');
-    const metaEl = document.getElementById('meta');
-    const revealBtn = document.getElementById('revealBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const copyBtn = document.getElementById('copyBtn');
-    const errorEl = document.getElementById('error');
+    const ayahEl=document.getElementById("ayah");
+    const surahEl=document.getElementById("surah");
+    const verseEl=document.getElementById("verse");
+    const metaEl=document.getElementById("meta");
+    const revealBtn=document.getElementById("revealBtn");
+    const nextBtn=document.getElementById("nextBtn");
+    const copyBtn=document.getElementById("copyBtn");
+    const errorEl=document.getElementById("error");
+    const fontPicker=document.getElementById("fontPicker");
 
     function toArabicIndic(n){
-      const digits = '٠١٢٣٤٥٦٧٨٩';
-      return String(n).split('').map(d=>digits[d] ?? d).join('');
+      const d='٠١٢٣٤٥٦٧٨٩';
+      return [...String(n)].map(x=>d[x]||x).join('');
     }
 
-    let last = null;
+    let last=null;
 
-    async function fetchJson(url) {
-      const r = await fetch(buildUrl(url));
-      if (!r.ok) throw new Error(`${url} → ${r.status}`);
+    async function fetchJson(url){
+      const r=await fetch(buildUrl(url));
+      if(!r.ok) throw new Error(url+" → "+r.status);
       return r.json();
     }
 
     async function fetchRandomAyah(){
-      setLoading(true);
-      errorEl.style.display = 'none';
+      setLoading(true); errorEl.style.display="none";
       try{
-        const d1 = await fetchJson(API_ROOT + '/verses/random');
-        const verse_key = d1?.verse?.verse_key;
-        if(!verse_key) throw new Error('No verse_key returned');
+        const d1=await fetchJson(API_ROOT+"/verses/random");
+        const vk=d1?.verse?.verse_key;
+        if(!vk) throw new Error("Invalid verse_key");
 
-        const [surah, ayah] = verse_key.split(':');
+        const [s,a]=vk.split(":");
 
-        const d2 = await fetchJson(API_ROOT + '/quran/verses/uthmani?verse_key=' + encodeURIComponent(verse_key));
-        const ayahText = d2?.verses?.[0]?.text_uthmani || '';
+        const d2=await fetchJson(API_ROOT+"/quran/verses/uthmani?verse_key="+encodeURIComponent(vk));
+        const ayat=d2?.verses?.[0]?.text_uthmani || "";
 
-        const d3 = await fetchJson(API_ROOT + `/chapters/${surah}?language=ar`);
-        const surahName = d3?.chapter?.name_arabic || d3?.chapter?.name || '';
+        const d3=await fetchJson(API_ROOT+`/chapters/${s}?language=ar`);
+        const sName=d3?.chapter?.name_arabic || d3?.chapter?.name;
 
-        last = {ayahText, surahName, verse_key, surah: parseInt(surah,10), ayah: parseInt(ayah,10)};
+        last={ayahText:ayat,surahName:sName,verse_key:vk,s:parseInt(s),a:parseInt(a)};
         renderAyah();
-      }catch(err){
-        console.error(err);
-        errorEl.textContent = 'حدث خطأ: ' + (err.message || err);
-        errorEl.style.display = 'block';
-        ayahEl.textContent = 'لا يمكن جلب الآية حالياً.';
-        metaEl.style.visibility = 'hidden';
-      }finally{
-        setLoading(false);
-      }
+      }catch(e){
+        errorEl.textContent="حدث خطأ: "+e.message;
+        errorEl.style.display="block";
+        ayahEl.textContent="لا يمكن جلب الآية حالياً.";
+        metaEl.style.visibility="hidden";
+      }finally{ setLoading(false); }
     }
 
     function renderAyah(){
-      if(!last) return;
-      ayahEl.textContent = last.ayahText || '';
-      surahEl.textContent = '';
-      verseEl.textContent = '';
-      metaEl.style.visibility = 'hidden';
+      ayahEl.textContent=last.ayahText;
+      surahEl.textContent="";
+      verseEl.textContent="";
+      metaEl.style.visibility="hidden";
     }
 
     function reveal(){
-      if(!last) return;
-      surahEl.textContent = 'السورة: ' + last.surahName;
-      verseEl.textContent = 'الآية: ' + toArabicIndic(last.ayah) + ' — (' + last.verse_key + ')';
-      metaEl.style.visibility = 'visible';
+      surahEl.textContent="السورة: "+last.surahName;
+      verseEl.textContent="الآية: "+toArabicIndic(last.a)+" — ("+last.verse_key+")";
+      metaEl.style.visibility="visible";
     }
 
-    function setLoading(isLoading){
-      if(isLoading){
-        nextBtn.disabled = true; revealBtn.disabled = true; copyBtn.disabled = true;
-        nextBtn.textContent = 'جارٍ...';
-      } else {
-        nextBtn.disabled = false; revealBtn.disabled = false; copyBtn.disabled = false;
-        nextBtn.textContent = 'آية ثانية';
-      }
+    function setLoading(b){
+      nextBtn.disabled=revealBtn.disabled=copyBtn.disabled=b;
+      nextBtn.textContent=b?"جارٍ...":"آية ثانية";
     }
 
-    revealBtn.addEventListener('click', ()=>{ reveal(); });
-    nextBtn.addEventListener('click', ()=>{ fetchRandomAyah(); });
-    copyBtn.addEventListener('click', async ()=>{
-      if(!last) return;
-      const text = `${last.ayahText}\n — ${last.surahName} ${last.verse_key}`;
+    revealBtn.onclick=reveal;
+    nextBtn.onclick=fetchRandomAyah;
+
+    copyBtn.onclick=async()=>{
+      const t=`${last.ayahText}\n— ${last.surahName} ${last.verse_key}`;
       try{
-        await navigator.clipboard.writeText(text);
-        copyBtn.textContent = 'تم النسخ!';
-        setTimeout(()=>copyBtn.textContent='نسخ الآية',900);
-      }catch(e){
-        alert('فشل النسخ — حاول يدوياً');
-      }
-    });
+        await navigator.clipboard.writeText(t);
+        copyBtn.textContent="تم النسخ!";
+        setTimeout(()=>copyBtn.textContent="نسخ الآية",800);
+      }catch{ alert("فشل النسخ — حاول يدوياً"); }
+    };
 
-    // initial fetch
+    // Font switcher
+    function applyFont(f){
+      document.body.style.fontFamily=f;
+      localStorage.setItem("quranFont",f);
+    }
+
+    fontPicker.onchange=()=>applyFont(fontPicker.value);
+
+    // default font: Scheherazade if nothing saved
+    const saved=localStorage.getItem("quranFont") || "Scheherazade New";
+    applyFont(saved);
+    fontPicker.value = saved;
+
     fetchRandomAyah();
   </script>
+
 </body>
 </html>
