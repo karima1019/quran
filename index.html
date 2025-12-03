@@ -17,21 +17,41 @@
       background: linear-gradient(180deg,#071029,#0b1220);
       background-color: #0b1220;
       color: #fff;
-      overflow-y: hidden; /* prevent page bounce */
+      overflow-x: hidden; /* prevent horizontal scroll */
+      overflow-y: hidden; /* page won't bounce */
       overscroll-behavior-y: none;
     }
     .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
     .scrollable-card {
       max-height: 90vh;
       overflow-y: auto;
+      overflow-x: hidden; /* vertical only */
       -webkit-overflow-scrolling: touch;
       width: 100%;
     }
-    .card{width:100%;max-width:760px;background:var(--card);border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+    .card{
+      width:100%;
+      max-width:760px;
+      background:var(--card);
+      border-radius:14px;
+      padding:18px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.6);
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
     h1{margin:0 0 8px 0;font-size:18px;text-align:center;color:var(--accent)}
-    .ayah{font-size:32px;line-height:1.6;text-align:center;padding:18px 8px;direction:rtl;unicode-bidi:isolate;word-break:break-word}
+    .ayah{
+      font-size:32px;
+      line-height:1.6;
+      text-align:center;
+      padding:18px 8px;
+      direction:rtl;
+      unicode-bidi:isolate;
+      word-break:break-word;
+      white-space: normal; /* allow wrapping */
+    }
     @media(min-width:600px){.ayah{font-size:44px}}
-    .meta{display:flex;gap:12px;justify-content:center;align-items:center;margin-top:8px;color:var(--muted);font-size:18px}
+    .meta{display:flex;gap:12px;justify-content:center;align-items:center;margin-top:8px;color:var(--muted);font-size:18px;flex-wrap:wrap}
     .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
     button{background:transparent;border:1px solid rgba(255,255,255,0.08);padding:10px 14px;border-radius:10px;color:#fff;font-size:16px;cursor:pointer}
     button.primary{background:var(--accent);color:#081126;border:none}
@@ -74,8 +94,8 @@
   <div class="wrap">
     <div class="scrollable-card">
       <div class="card">
-        <h1>آية عشوائية — جرّب التخمين</h1>
-        <div id="ayah" class="ayah">جارٍ التحميل…</div>
+        <h1>Random Ayah — Try to Guess</h1>
+        <div id="ayah" class="ayah">Loading…</div>
         <div class="meta" id="meta" style="visibility:hidden">
           <div id="surah"></div>
           <div id="verse"></div>
@@ -85,7 +105,7 @@
           <button id="nextBtn" class="primary">Next Ayah</button>
           <button id="copyBtn">Copy Ayah</button>
         </div>
-        <div class="small">المصدر: quran.com API – النص العثماني.</div>
+        <div class="small">Source: quran.com API – Arabic Uthmani text.</div>
         <div id="error" class="error" style="display:none"></div>
       </div>
     </div>
@@ -138,9 +158,9 @@
         last={ayahText:ayat,surahName:sName,verse_key:vk,s:parseInt(s),a:parseInt(a)};
         renderAyah();
       }catch(e){
-        errorEl.textContent="حدث خطأ: "+e.message;
+        errorEl.textContent="Error: "+e.message;
         errorEl.style.display="block";
-        ayahEl.textContent="لا يمكن جلب الآية حالياً.";
+        ayahEl.textContent="Unable to fetch ayah.";
         metaEl.style.visibility="hidden";
       }finally{ setLoading(false); }
     }
@@ -153,8 +173,8 @@
     }
 
     function reveal(){
-      surahEl.textContent="السورة: "+last.surahName;
-      verseEl.textContent="الآية: "+toArabicIndic(last.a)+" — ("+last.verse_key+")";
+      surahEl.textContent="Surah: "+last.surahName;
+      verseEl.textContent="Ayah: "+toArabicIndic(last.a)+" — ("+last.verse_key+")";
       metaEl.style.visibility="visible";
     }
 
