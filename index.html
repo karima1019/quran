@@ -17,10 +17,16 @@
       background: linear-gradient(180deg,#071029,#0b1220);
       background-color: #0b1220;
       color: #fff;
-      overflow-y: hidden;
+      overflow-y: hidden; /* prevent page bounce */
       overscroll-behavior-y: none;
     }
     .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+    .scrollable-card {
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+    }
     .card{width:100%;max-width:760px;background:var(--card);border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
     h1{margin:0 0 8px 0;font-size:18px;text-align:center;color:var(--accent)}
     .ayah{font-size:32px;line-height:1.6;text-align:center;padding:18px 8px;direction:rtl;unicode-bidi:isolate;word-break:break-word}
@@ -31,11 +37,6 @@
     button.primary{background:var(--accent);color:#081126;border:none}
     .small{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
     .error{color:#ff7b7b;text-align:center;margin-top:8px}
-    .scrollable {
-      height: 100vh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
     #fontPicker{
       position:fixed;left:10px;top:10px;
       background:#0f1724;border:1px solid #444;
@@ -68,23 +69,25 @@
   </select>
 
   <!-- Language toggle -->
-  <button id="langToggle">AR</button>
+  <button id="langToggle">EN</button>
 
   <div class="wrap">
-    <div class="card">
-      <h1>آية عشوائية — جرّب التخمين</h1>
-      <div id="ayah" class="ayah">جارٍ التحميل…</div>
-      <div class="meta" id="meta" style="visibility:hidden">
-        <div id="surah"></div>
-        <div id="verse"></div>
+    <div class="scrollable-card">
+      <div class="card">
+        <h1>آية عشوائية — جرّب التخمين</h1>
+        <div id="ayah" class="ayah">جارٍ التحميل…</div>
+        <div class="meta" id="meta" style="visibility:hidden">
+          <div id="surah"></div>
+          <div id="verse"></div>
+        </div>
+        <div class="controls">
+          <button id="revealBtn">Reveal</button>
+          <button id="nextBtn" class="primary">Next Ayah</button>
+          <button id="copyBtn">Copy Ayah</button>
+        </div>
+        <div class="small">المصدر: quran.com API – النص العثماني.</div>
+        <div id="error" class="error" style="display:none"></div>
       </div>
-      <div class="controls">
-        <button id="revealBtn">كشف</button>
-        <button id="nextBtn" class="primary">آية ثانية</button>
-        <button id="copyBtn">نسخ الآية</button>
-      </div>
-      <div class="small">المصدر: quran.com API – النص العثماني.</div>
-      <div id="error" class="error" style="display:none"></div>
     </div>
   </div>
 
@@ -157,7 +160,7 @@
 
     function setLoading(b){
       nextBtn.disabled=revealBtn.disabled=copyBtn.disabled=b;
-      nextBtn.textContent=b?"جارٍ...":BUTTON_TEXT[lang].next;
+      nextBtn.textContent=b?"Loading...":BUTTON_TEXT[lang].next;
       revealBtn.textContent=BUTTON_TEXT[lang].reveal;
       copyBtn.textContent=BUTTON_TEXT[lang].copy;
     }
@@ -171,7 +174,7 @@
         await navigator.clipboard.writeText(t);
         copyBtn.textContent=BUTTON_TEXT[lang].copy+" ✓";
         setTimeout(()=>copyBtn.textContent=BUTTON_TEXT[lang].copy,800);
-      }catch{ alert("فشل النسخ — حاول يدوياً"); }
+      }catch{ alert("Failed to copy — try manually."); }
     };
 
     // Font switcher
@@ -189,7 +192,7 @@
       ar: { next: "آية ثانية", reveal: "كشف", copy: "نسخ الآية" },
       en: { next: "Next Ayah", reveal: "Reveal", copy: "Copy Ayah" }
     };
-    let lang = localStorage.getItem("quranLang") || "en";
+    let lang = localStorage.getItem("quranLang") || "en"; // Default English
     function applyLang(){
       nextBtn.textContent = BUTTON_TEXT[lang].next;
       revealBtn.textContent = BUTTON_TEXT[lang].reveal;
