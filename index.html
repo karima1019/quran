@@ -11,15 +11,15 @@
   <style>
     :root{--bg:#0b1220;--card:#0f1724;--muted:#98a3b3;--accent:#ffd166}
     html, body {
-  height: 100%;
-  margin: 0;
-  font-family: 'Scheherazade New', serif;
-  background: linear-gradient(180deg,#071029,#0b1220);
-  background-color: #0b1220;
-  color: #fff;
-  overflow-y: hidden; /* prevent extra vertical bounce */
-  overscroll-behavior-y: none;
-}
+      height: 100%;
+      margin: 0;
+      font-family: 'Scheherazade New', serif;
+      background: linear-gradient(180deg,#071029,#0b1220);
+      background-color: #0b1220;
+      color: #fff;
+      overflow-y: hidden;
+      overscroll-behavior-y: none;
+    }
     .wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
     .card{width:100%;max-width:760px;background:var(--card);border-radius:14px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,0.6)}
     h1{margin:0 0 8px 0;font-size:18px;text-align:center;color:var(--accent)}
@@ -32,17 +32,28 @@
     .small{font-size:13px;color:var(--muted);text-align:center;margin-top:10px}
     .error{color:#ff7b7b;text-align:center;margin-top:8px}
     .scrollable {
-  height: 100vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
-}
-
-    /* Font dropdown */
+      height: 100vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     #fontPicker{
       position:fixed;left:10px;top:10px;
       background:#0f1724;border:1px solid #444;
       padding:6px 10px;border-radius:8px;
       color:#fff;font-size:14px;z-index:99;
+    }
+    #langToggle{
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #0f1724;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -55,6 +66,9 @@
     <option value="Noto Naskh Arabic">Noto Naskh</option>
     <option value="Tajawal">Tajawal</option>
   </select>
+
+  <!-- Language toggle -->
+  <button id="langToggle">AR</button>
 
   <div class="wrap">
     <div class="card">
@@ -73,16 +87,10 @@
       <div id="error" class="error" style="display:none"></div>
     </div>
   </div>
-  <div class="scrollable">
-  <div class="wrap">
-    ...your card content...
-  </div>
-</div>
 
   <script>
-    const PROXY = "";  // No proxy needed
+    const PROXY = "";  
     const API_ROOT = "https://api.quran.com/api/v4";
-
     function buildUrl(u){ return PROXY ? PROXY + encodeURIComponent(u) : u; }
 
     const ayahEl=document.getElementById("ayah");
@@ -94,6 +102,7 @@
     const copyBtn=document.getElementById("copyBtn");
     const errorEl=document.getElementById("error");
     const fontPicker=document.getElementById("fontPicker");
+    const langToggle=document.getElementById("langToggle");
 
     function toArabicIndic(n){
       const d='٠١٢٣٤٥٦٧٨٩';
@@ -148,7 +157,9 @@
 
     function setLoading(b){
       nextBtn.disabled=revealBtn.disabled=copyBtn.disabled=b;
-      nextBtn.textContent=b?"جارٍ...":"آية ثانية";
+      nextBtn.textContent=b?"جارٍ...":BUTTON_TEXT[lang].next;
+      revealBtn.textContent=BUTTON_TEXT[lang].reveal;
+      copyBtn.textContent=BUTTON_TEXT[lang].copy;
     }
 
     revealBtn.onclick=reveal;
@@ -158,8 +169,8 @@
       const t=`${last.ayahText}\n— ${last.surahName} ${last.verse_key}`;
       try{
         await navigator.clipboard.writeText(t);
-        copyBtn.textContent="تم النسخ!";
-        setTimeout(()=>copyBtn.textContent="نسخ الآية",800);
+        copyBtn.textContent=BUTTON_TEXT[lang].copy+" ✓";
+        setTimeout(()=>copyBtn.textContent=BUTTON_TEXT[lang].copy,800);
       }catch{ alert("فشل النسخ — حاول يدوياً"); }
     };
 
@@ -168,13 +179,29 @@
       document.body.style.fontFamily=f;
       localStorage.setItem("quranFont",f);
     }
-
     fontPicker.onchange=()=>applyFont(fontPicker.value);
+    const savedFont=localStorage.getItem("quranFont") || "Scheherazade New";
+    applyFont(savedFont);
+    fontPicker.value = savedFont;
 
-    // default font: Scheherazade if nothing saved
-    const saved=localStorage.getItem("quranFont") || "Scheherazade New";
-    applyFont(saved);
-    fontPicker.value = saved;
+    // Language toggle
+    const BUTTON_TEXT = {
+      ar: { next: "آية ثانية", reveal: "كشف", copy: "نسخ الآية" },
+      en: { next: "Next Ayah", reveal: "Reveal", copy: "Copy Ayah" }
+    };
+    let lang = localStorage.getItem("quranLang") || "en";
+    function applyLang(){
+      nextBtn.textContent = BUTTON_TEXT[lang].next;
+      revealBtn.textContent = BUTTON_TEXT[lang].reveal;
+      copyBtn.textContent = BUTTON_TEXT[lang].copy;
+      langToggle.textContent = lang.toUpperCase();
+    }
+    langToggle.onclick = ()=>{
+      lang = lang === "ar" ? "en" : "ar";
+      localStorage.setItem("quranLang", lang);
+      applyLang();
+    };
+    applyLang();
 
     fetchRandomAyah();
   </script>
