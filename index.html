@@ -3,7 +3,7 @@ async function fetchRandomAyah(){
 setLoading(true);
 errorEl.style.display = 'none';
 try{
-const PROXY = 'https://yourproxy.workers.dev/?url=';
+const PROXY = 'https://quran.ireactivate231gt.workers.dev/';
 const API_BASE = PROXY + 'https://api.quran.com/api/v4';
 if(!r1.ok) throw new Error('random endpoint: ' + r1.status);
 const d1 = await r1.json();
