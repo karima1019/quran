@@ -163,8 +163,17 @@ async function fetchRandomAyah(){
     const d2=await fetchJson(API_ROOT+"/quran/verses/uthmani?verse_key="+verseKey);
     const ayat=d2?.verses?.[0]?.text_uthmani||"";
 
+    // Fetch next ayah if exists
+    let nextAyahText="";
+    if(randomAyah < totalVerses){
+      const nextKey=`${randomSurah}:${randomAyah+1}`;
+      const d3=await fetchJson(API_ROOT+"/quran/verses/uthmani?verse_key="+nextKey);
+      nextAyahText=d3?.verses?.[0]?.text_uthmani||"";
+    }
+
     last={
       ayahText:ayat,
+      nextAyahText:nextAyahText,
       surahName: lang==="ar" ? chapter.name_arabic : chapter.name_simple,
       verse_key:verseKey,
       s:randomSurah,
@@ -188,6 +197,14 @@ function renderAyah(){
 function reveal(){
   surahEl.textContent=(lang==="ar"?"السورة: ":"Surah: ")+last.surahName;
   verseEl.textContent=(lang==="ar"?"الآية: ":"Ayah: ")+(lang==="ar"?toArabicIndic(last.a):last.a)+" — ("+last.verse_key+")";
+
+  // Show next ayah below in gray
+  if(last.nextAyahText){
+    verseEl.innerHTML += `<div style="margin-top:8px;font-size:16px;color:#aaa;text-align:center;">
+      ${lang==="ar"?"الآية التالية: ":"Next Ayah: "} ${last.nextAyahText}
+    </div>`;
+  }
+
   metaEl.style.visibility="visible";
 }
 
@@ -238,7 +255,6 @@ langToggle.onclick=()=>{
 
 applyLang();
 loadSurahs().then(fetchRandomAyah);
-
 </script>
 </body>
 </html>
